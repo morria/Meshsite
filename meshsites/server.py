@@ -114,7 +114,7 @@ class MeshsiteServer:
         while not self._stop.is_set() and not self._lost.is_set():
             try:
                 self._send(BROADCAST, self._beacon, want_ack=False)
-                log.debug("beacon sent (%r)", self.site.name)
+                log.info("beacon sent (%r)", self.site.name)
             except Exception as e:
                 log.warning("beacon send failed: %s", e)
             delay = self.beacon_interval + random.uniform(-self.beacon_jitter,
