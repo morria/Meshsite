@@ -164,6 +164,8 @@ def main(argv=None) -> int:
     p.add_argument("--tcp", metavar="HOST", help="connect to a radio over TCP "
                                                  "instead of serial")
     p.add_argument("-v", "--verbose", action="store_true", help="debug logging")
+    p.add_argument("--log-file", metavar="PATH",
+                   help="also append logs (access and errors) to this file")
     p.set_defaults(func=cmd_serve)
 
     p = sub.add_parser("init", help="scaffold a new site directory")
@@ -176,6 +178,11 @@ def main(argv=None) -> int:
         level=logging.DEBUG if getattr(args, "verbose", False) else logging.INFO,
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
         datefmt="%H:%M:%S")
+    if getattr(args, "log_file", None):
+        handler = logging.FileHandler(args.log_file, encoding="utf-8")
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)-7s %(name)s: %(message)s"))
+        logging.getLogger().addHandler(handler)
     return args.func(args)
 
 

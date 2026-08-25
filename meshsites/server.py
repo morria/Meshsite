@@ -23,6 +23,7 @@ from . import protocol as P
 from .site import PageError, Site
 
 log = logging.getLogger("meshsites.server")
+access = logging.getLogger("meshsites.access")
 
 CACHE_TTL = 120.0
 CACHE_MAX = 128
@@ -156,10 +157,18 @@ class MeshsiteServer:
         except P.FrameError as e:
             if e.req_id is not None:
                 self._send_error(sender, e.req_id, e.code, e.message)
+                access.info("%s malformed request -> ERROR %d %s%s", sender_id,
+                            e.code, P.error_name(e.code),
+                            " (%s)" % e.message if e.message else "")
+            else:
+                access.info("%s malformed request (id unparseable) -> dropped",
+                            sender_id)
             return
         if frame.version < P.MIN_VERSION:
             self._send_error(sender, frame.req_id, P.ERR_UNSUPPORTED_VERSION,
                              "supported versions %d-%d" % (P.MIN_VERSION, P.VERSION))
+            access.info("%s v%d request -> ERROR 6 UNSUPPORTED_VERSION",
+                        sender_id, frame.version)
             return
 
         with self._state:
@@ -170,9 +179,13 @@ class MeshsiteServer:
                               frame.req_id)
                     return  # link-level retransmit; BUSY would be wrong (spec 3)
                 self._send_error(sender, frame.req_id, P.ERR_BUSY, "busy")
+                access.info("%s %s -> ERROR 5 BUSY (request in flight)",
+                            sender_id, frame.target)
                 return
             if len(self._inflight) >= MAX_CONCURRENT:
                 self._send_error(sender, frame.req_id, P.ERR_BUSY, "busy")
+                access.info("%s %s -> ERROR 5 BUSY (server at capacity)",
+                            sender_id, frame.target)
                 return
             self._inflight[sender] = (frame.req_id, frame.cache_key)
 
@@ -183,15 +196,23 @@ class MeshsiteServer:
     # ----------------------------------------------------------------- serve
 
     def _serve(self, sender: int, sender_id: str, frame: P.RequestFrame) -> None:
+        started = time.monotonic()
+        method = "POST" if frame.method == P.POST else "GET"
         try:
             kind, payloads = self._cached_response(sender, frame)
-            if kind is None:
+            cached = kind is not None
+            if not cached:
                 kind, payloads = self._render(sender, sender_id, frame)
                 if kind in ("chunks", "not_modified"):
                     self._cache_store(sender, frame, kind, payloads)
-            self._transmit(sender, frame.req_id, kind, payloads)
+            outcome = self._transmit(sender, frame.req_id, kind, payloads)
+            access.info("%s %s %s -> %s in %.1fs%s", sender_id, method,
+                        frame.target, outcome, time.monotonic() - started,
+                        " (from response cache)" if cached else "")
         except Exception:
             log.exception("failed serving %04x for %s", frame.req_id, sender_id)
+            access.info("%s %s %s -> internal failure (see error log)",
+                        sender_id, method, frame.target)
         finally:
             with self._state:
                 self._inflight.pop(sender, None)
@@ -240,13 +261,15 @@ class MeshsiteServer:
             return "error", [P.encode_error(frame.req_id, e.code, e.message)]
         return "chunks", chunks
 
-    def _transmit(self, sender: int, req_id: int, kind: str, payloads) -> None:
+    def _transmit(self, sender: int, req_id: int, kind: str, payloads) -> str:
         if kind == "error":
             self._send(sender, payloads[0], want_ack=False)  # spec: no ack on ERROR
-            return
+            code = payloads[0][3]
+            return "ERROR %d %s" % (code, P.error_name(code))
         if kind == "not_modified":
             self._send_paced(sender, payloads[0])
-            return
+            return "NOT_MODIFIED"
+        total_bytes = sum(len(p) - 10 for p in payloads)
         for seq, payload in enumerate(payloads):
             result = self._send_paced(sender, payload)
             if result == "nak":
@@ -254,9 +277,11 @@ class MeshsiteServer:
                 # response still serves a later retry (spec 3).
                 log.info("NAK on chunk %d/%d of %04x — aborting response",
                          seq + 1, len(payloads), req_id)
-                return
+                return "aborted at chunk %d/%d (NAK)" % (seq + 1, len(payloads))
             log.debug("chunk %d/%d of %04x: %s", seq + 1, len(payloads),
                       req_id, result)
+        return "%d chunk%s, %d bytes deflated" % (
+            len(payloads), "" if len(payloads) == 1 else "s", total_bytes)
 
     # ------------------------------------------------------------------ send
 

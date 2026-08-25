@@ -43,6 +43,19 @@ ERR_SERVER_ERROR = 4
 ERR_BUSY = 5
 ERR_UNSUPPORTED_VERSION = 6
 
+ERROR_NAMES = {
+    ERR_NOT_FOUND: "NOT_FOUND",
+    ERR_TOO_LARGE: "TOO_LARGE",
+    ERR_BAD_REQUEST: "BAD_REQUEST",
+    ERR_SERVER_ERROR: "SERVER_ERROR",
+    ERR_BUSY: "BUSY",
+    ERR_UNSUPPORTED_VERSION: "UNSUPPORTED_VERSION",
+}
+
+
+def error_name(code: int) -> str:
+    return ERROR_NAMES.get(code, "code %d" % code)
+
 # Characters that must never reach displays or storage: C0/C1 controls, DEL,
 # and bidirectional-override/isolate characters (spec sections 2, 5).
 _BIDI = "‪‫‬‭‮⁦⁧⁨⁩"
