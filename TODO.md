@@ -11,6 +11,7 @@ bottom of the relevant section.
 - [x] Sanitized, size-bounded storage helper (`meshsites.Store`)
 - [x] CLI: `meshsites serve` / `meshsites init`, serial autodetect, `--tcp`
 - [x] Access and error logging: one access line per request (sender, method,
+- [x] SIGUSR1 fires an immediate beacon (operator re-announce)
       path, outcome, duration) incl. rejected/malformed requests; `--log-file`
 
 ## Planned

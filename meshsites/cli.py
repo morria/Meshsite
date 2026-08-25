@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 import tomllib
 from pathlib import Path
@@ -122,6 +123,12 @@ def cmd_serve(args) -> int:
 
     log.info("meshsites %s — site %r from %s via %s", __version__, name, root, where)
     server = MeshsiteServer(Site(root, name), connect)
+    try:
+        import signal
+        signal.signal(signal.SIGUSR1, lambda *_: server.beacon_now())
+        log.info("SIGUSR1 triggers an immediate beacon (kill -USR1 %d)", os.getpid())
+    except (ImportError, AttributeError, ValueError):
+        pass  # no SIGUSR1 on this platform / not main thread
     try:
         server.run()
     except KeyboardInterrupt:

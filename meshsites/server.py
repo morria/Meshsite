@@ -53,6 +53,7 @@ class MeshsiteServer:
         self._cache: collections.OrderedDict = collections.OrderedDict()
         self._stop = threading.Event()
         self._lost = threading.Event()
+        self._beacon_now = threading.Event()
 
     # ------------------------------------------------------------- lifecycle
 
@@ -91,6 +92,10 @@ class MeshsiteServer:
     def stop(self) -> None:
         self._stop.set()
 
+    def beacon_now(self) -> None:
+        """Fire a beacon immediately (operator-triggered, e.g. SIGUSR1)."""
+        self._beacon_now.set()
+
     def _close_iface(self) -> None:
         iface, self.iface = self.iface, None
         if iface is not None:
@@ -118,7 +123,9 @@ class MeshsiteServer:
             while time.monotonic() < deadline:
                 if self._stop.is_set() or self._lost.is_set():
                     return
-                time.sleep(0.5)
+                if self._beacon_now.wait(0.5):
+                    self._beacon_now.clear()
+                    break  # back to the top of the loop: beacon immediately
 
     # --------------------------------------------------------------- receive
 
