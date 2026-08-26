@@ -293,8 +293,10 @@ class MeshsiteServer:
             self._send_paced(sender, payloads[0])
             return "NOT_MODIFIED"
         total_bytes = sum(len(p) - 10 for p in payloads)
+        results = []
         for seq, payload in enumerate(payloads):
             result = self._send_paced(sender, payload)
+            results.append(result)
             if result == "nak":
                 # Peer unreachable — abort remaining chunks; the cached
                 # response still serves a later retry (spec 3).
@@ -303,8 +305,10 @@ class MeshsiteServer:
                 return "aborted at chunk %d/%d (NAK)" % (seq + 1, len(payloads))
             log.debug("chunk %d/%d of %04x: %s", seq + 1, len(payloads),
                       req_id, result)
-        return "%d chunk%s, %d bytes deflated" % (
-            len(payloads), "" if len(payloads) == 1 else "s", total_bytes)
+        acked = results.count("ack")
+        detail = "all acked" if acked == len(results) else             "%d/%d acked (%s)" % (acked, len(results), ",".join(results))
+        return "%d chunk%s, %d bytes deflated, %s" % (
+            len(payloads), "" if len(payloads) == 1 else "s", total_bytes, detail)
 
     # ------------------------------------------------------------------ send
 
