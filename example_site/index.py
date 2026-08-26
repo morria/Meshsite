@@ -27,7 +27,7 @@ def _bump_calls(sender):
 def handle(req):
     n, last = _bump_calls(req.sender)
     lines = [
-        "# 🐇 GRANGES BASE BBS",
+        "# 🐇 THE WARREN BBS",
         "",
         "Welcome to The Warren — a burrow on the mesh.",
         "No internet was harmed in serving this page.",

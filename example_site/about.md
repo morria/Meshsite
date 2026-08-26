@@ -1,6 +1,6 @@
 # About This System
 
-GRANGES BASE BBS ("The Warren") runs on:
+THE WARREN BBS runs on:
 
 * A RAK4631 (nRF52840 + SX1262) named Hops 🐇
 * Meshtastic firmware 2.7.26, MediumSlow / slot 48
