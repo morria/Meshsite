@@ -6,6 +6,10 @@ server implementing **Meshsites protocol v1 (draft 7)**: beaconed discovery,
 one-packet requests, DEFLATE-compressed chunked pages on port 421, all
 strictly `hop_limit = 1` so the mesh never relays a byte of it.
 
+A site is a directory: Markdown-ish (**Meshdown**) files for static pages,
+plain Python files for dynamic ones. A weekend-project protocol by design —
+the whole wire format fits on one page of the spec.
+
 ## Install
 
 ```sh
@@ -22,12 +26,22 @@ meshsites init mysite --name "My Site"   # scaffold index.md, about.md, guestboo
 meshsites serve mysite                   # connect to the radio and start serving
 ```
 
-The server beacons the site name on startup and every 5 minutes; nearby
-Meshsites clients list it and can browse.
+The server beacons the site name on startup and every 5 minutes ± 30 s;
+nearby Meshsites clients list it and can browse. Send `SIGUSR1` to the
+server process (the PID is in the startup log) to fire a beacon immediately.
+
+```sh
+meshsites serve mysite \
+    --device /dev/serial/by-id/usb-RAKwireless_WisCore_RAK4631_...-if00 \
+    --log-file /var/log/meshsites.log
+```
+
+Prefer a `/dev/serial/by-id/...` path over `/dev/ttyACM0` — ACM numbering
+follows USB enumeration order and can silently swap devices after a replug.
 
 ## Site directories
 
-A site is a directory of pages. Requests map to files:
+Requests map to files:
 
 | Request | File served |
 |---|---|
@@ -74,6 +88,20 @@ file to 128 KB, dropping oldest entries. `sanitize()` does the same stripping
 for anything user-supplied you render into a page (it also prevents Meshdown
 line injection).
 
+## Logging
+
+One access-log line per request (sender, method, path, outcome, duration),
+including rejected, malformed, and BUSY requests. Beacons from other
+Meshsites servers and plain text messages heard by the node are logged at
+INFO too, so the log doubles as a view of who's around. `--log-file PATH`
+appends everything to a file; `-v` adds debug detail.
+
+```
+20:16:01 INFO meshsites.server: beacon sent ('Granges Base')
+20:32:54 INFO meshsites.access: beacon heard from !8ac3c723: site 'W2ASM' (v1)
+20:35:12 INFO meshsites.access: !8ac3c723 GET / -> 1 chunk, 74 bytes deflated in 1.2s
+```
+
 ## Protocol compliance notes
 
 - All frames sent with `hop_limit = 1` on the primary channel; received
@@ -99,10 +127,10 @@ line injection).
 # /etc/systemd/system/meshsites.service
 [Unit]
 Description=Meshsites server
-After=dev-ttyACM0.device
+After=multi-user.target
 
 [Service]
-ExecStart=/usr/local/bin/meshsites serve /srv/mysite
+ExecStart=/usr/local/bin/meshsites serve /srv/mysite --log-file /var/log/meshsites.log
 Restart=on-failure
 User=meshsites
 Group=dialout
@@ -116,3 +144,8 @@ WantedBy=multi-user.target
 ```sh
 python3 -m unittest discover -s tests -v
 ```
+
+`TODO.md` tracks the running feature list. The protocol spec (v1 draft 7)
+defines the wire format; `meshsites/protocol.py` is a direct transcription
+of it and the test suite pins the edge cases (error-code precedence, POST
+etag normalization, chunk sizing, relay-discard).

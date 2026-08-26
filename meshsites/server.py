@@ -164,6 +164,14 @@ class MeshsiteServer:
             return
         if getattr(raw, "pki_encrypted", False):
             return  # PKI unicast must not be used (spec 1)
+        if payload[0] == P.BEACON:
+            # Another Meshsites server nearby — log it (out-of-spec beacons
+            # are noted but not trusted further than the log line)
+            if len(payload) >= 3 and payload[1] >= 1:
+                name = P.clean_text(payload[2:].decode("utf-8", "replace"))
+                access.info("beacon heard from %s: site %r (v%d)",
+                            packet.get("fromId") or sender, name, payload[1])
+            return
         if payload[0] != P.REQUEST:
             return  # servers consume only REQUESTs; unknown types ignored
 
