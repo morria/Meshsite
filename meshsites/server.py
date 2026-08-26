@@ -32,6 +32,7 @@ BEACON_INTERVAL = 300.0
 BEACON_JITTER = 30.0
 MAX_CONCURRENT = 8
 BROADCAST = 0xFFFFFFFF
+TEXT_PORT = 1  # TEXT_MESSAGE_APP
 
 
 class MeshsiteServer:
@@ -138,6 +139,14 @@ class MeshsiteServer:
     def _handle_packet(self, packet: dict) -> None:
         raw = packet.get("raw")
         if raw is None or not raw.HasField("decoded"):
+            return
+        if raw.decoded.portnum == TEXT_PORT:
+            # Not Meshsites, but worth surfacing: someone is talking to the node
+            text = P.clean_text(bytes(raw.decoded.payload).decode("utf-8", "replace"))
+            log.info("text message from %s to %s: %s",
+                     packet.get("fromId") or packet.get("from"),
+                     "us" if packet.get("to") == self.my_num else
+                     packet.get("toId") or packet.get("to"), text)
             return
         if raw.decoded.portnum != P.PORTNUM:
             return
