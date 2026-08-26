@@ -2,7 +2,7 @@
 
 Serve tiny sites over [Meshtastic](https://meshtastic.org) LoRa radios —
 Gopher-over-LoRa: read-mostly, slow, local by physics. This is a Python
-server implementing **Meshsites protocol v1 (draft 7)**: beaconed discovery,
+server implementing **[Meshsites protocol v1](SPEC.md)**: beaconed discovery,
 one-packet requests, DEFLATE-compressed chunked pages on port 421, all
 strictly `hop_limit = 1` so the mesh never relays a byte of it.
 
@@ -155,7 +155,11 @@ WantedBy=multi-user.target
 python3 -m unittest discover -s tests -v
 ```
 
-`TODO.md` tracks the running feature list. The protocol spec (v1 draft 7)
-defines the wire format; `meshsites/protocol.py` is a direct transcription
-of it and the test suite pins the edge cases (error-code precedence, POST
-etag normalization, chunk sizing, relay-discard).
+`TODO.md` tracks the running feature list. **The full protocol
+specification lives in [SPEC.md](SPEC.md) (v1, draft 8)** — everything
+needed to write an independent client or server: wire format, reliability
+rules, caching, the Meshdown page format, and versioning.
+`meshsites/protocol.py` is a direct transcription of it and the test suite
+pins the edge cases (error-code precedence, POST etag normalization, chunk
+sizing, relay-discard). Two independent implementations (this server and an
+iOS client) interoperate as of draft 8.
