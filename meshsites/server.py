@@ -44,7 +44,8 @@ class MeshsiteServer:
         self.iface = None
         self.my_num: int | None = None
         self.beacon_interval = beacon_interval
-        self.beacon_jitter = beacon_jitter
+        # scale jitter down for fast cadences so the interval stays sane
+        self.beacon_jitter = min(beacon_jitter, beacon_interval * 0.1)
         self._beacon = P.encode_beacon(site.name)
 
         self._send_lock = threading.Lock()   # serialize radio writes (spec 3)

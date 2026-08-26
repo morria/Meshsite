@@ -122,7 +122,8 @@ def cmd_serve(args) -> int:
         where = args.device or "serial:auto"
 
     log.info("meshsites %s — site %r from %s via %s", __version__, name, root, where)
-    server = MeshsiteServer(Site(root, name), connect)
+    server = MeshsiteServer(Site(root, name), connect,
+                            beacon_interval=args.beacon_interval)
     try:
         import signal
         signal.signal(signal.SIGUSR1, lambda *_: server.beacon_now())
@@ -173,6 +174,8 @@ def main(argv=None) -> int:
     p.add_argument("-v", "--verbose", action="store_true", help="debug logging")
     p.add_argument("--log-file", metavar="PATH",
                    help="also append logs (access and errors) to this file")
+    p.add_argument("--beacon-interval", type=float, default=300.0, metavar="SECS",
+                   help="seconds between beacons (default 300; spec cadence)")
     p.set_defaults(func=cmd_serve)
 
     p = sub.add_parser("init", help="scaffold a new site directory")
