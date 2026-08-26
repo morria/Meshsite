@@ -5,3 +5,5 @@ dist/
 build/
 *.log
 *.log.tmp
+example_site/calls.count
+example_site/last.caller
