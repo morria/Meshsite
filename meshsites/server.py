@@ -140,6 +140,11 @@ class MeshsiteServer:
     def _handle_packet(self, packet: dict) -> None:
         raw = packet.get("raw")
         if raw is None or not raw.HasField("decoded"):
+            if raw is not None and packet.get("to") == self.my_num:
+                access.info("undecryptable unicast from %s (%d bytes) — "
+                            "radio lacks a key for it",
+                            packet.get("fromId") or packet.get("from"),
+                            len(bytes(raw.encrypted)) if raw.HasField("encrypted") else 0)
             return
         if raw.decoded.portnum == TEXT_PORT:
             # Not Meshsites, but worth surfacing: someone is talking to the node
@@ -229,13 +234,14 @@ class MeshsiteServer:
                 if kind in ("chunks", "not_modified"):
                     self._cache_store(sender, frame, kind, payloads)
             outcome = self._transmit(sender, frame.req_id, kind, payloads)
-            access.info("%s %s %s -> %s in %.1fs%s", sender_id, method,
-                        frame.target, outcome, time.monotonic() - started,
+            access.info("%s %s %s [id %04x] -> %s in %.1fs%s", sender_id,
+                        method, frame.target, frame.req_id, outcome,
+                        time.monotonic() - started,
                         " (from response cache)" if cached else "")
         except Exception:
             log.exception("failed serving %04x for %s", frame.req_id, sender_id)
-            access.info("%s %s %s -> internal failure (see error log)",
-                        sender_id, method, frame.target)
+            access.info("%s %s %s [id %04x] -> internal failure (see error log)",
+                        sender_id, method, frame.target, frame.req_id)
         finally:
             with self._state:
                 self._inflight.pop(sender, None)
