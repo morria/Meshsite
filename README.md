@@ -106,7 +106,8 @@ appends everything to a file; `-v` adds debug detail.
 
 - All frames sent with `hop_limit = 1` on the primary channel; received
   frames that were relayed (`hop_start > 0 && hop_limit < hop_start`) are
-  dropped, as are PKI-encrypted frames and frames over 200 bytes.
+  dropped, as are frames over 200 bytes. Unicast frames are accepted under
+  channel or PKI encryption (spec draft 8) — decryption is the radio's job.
 - Responses are raw DEFLATE (RFC 1951), max 16 chunks x 190 bytes; pages
   that compress larger answer `ERROR 2 TOO_LARGE`.
 - Etags are FNV-1a 32 over the uncompressed page; matching GETs answer
@@ -120,6 +121,15 @@ appends everything to a file; `-v` adds debug detail.
   version 0 answers `ERROR 6`; both cases otherwise drop silently.
 - Path traversal is rejected after percent-decoding; hidden files
   (dot-prefixed) and anything outside the site directory are never served.
+
+## Radio requirements
+
+- `device.rebroadcast_mode` MUST NOT be `CORE_PORTNUMS_ONLY` on either end
+  — it silently drops non-core portnums (like Meshsites' 421) on receive.
+  Use `ALL` (the default).
+- Both radios need matching primary-channel settings (preset, slot,
+  name/PSK); PKI DMs working between two nodes does *not* prove the
+  channel layer matches — beacons are channel-encrypted broadcasts.
 
 ## Running as a service
 

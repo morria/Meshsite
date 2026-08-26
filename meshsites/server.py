@@ -162,8 +162,6 @@ class MeshsiteServer:
         if raw.hop_start > 0 and raw.hop_limit < raw.hop_start:
             log.debug("dropping relayed frame from !%08x", sender)
             return
-        if getattr(raw, "pki_encrypted", False):
-            return  # PKI unicast must not be used (spec 1)
         if payload[0] == P.BEACON:
             # Another Meshsites server nearby — log it (out-of-spec beacons
             # are noted but not trusted further than the log line)
