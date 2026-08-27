@@ -14,7 +14,7 @@ radio range sees it and can browse. Nothing is ever relayed.
 
 ## Pages
 
-* Static pages are Meshdown (.md) files
+* Static pages are markdown (.md) files
 * Dynamic pages are Python (.py) files with a handle(req) function
 * Keep pages small: 3040 bytes compressed, max
 

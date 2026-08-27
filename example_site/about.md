@@ -7,7 +7,7 @@ THE WARREN BBS runs on:
 * meshsites - a Python Meshsites v1 server
 * Zero relays: everything you read came over one RF hop
 
-Pages are Meshdown over DEFLATE, 190 bytes per chunk, cached by
+Pages are markdown over DEFLATE, 190 bytes per chunk, cached by
 content hash. A full page costs at most 17 packets; revisiting an
 unchanged page costs 2.
 
