@@ -12,13 +12,13 @@ def handle(req):
         store.append({"line": req.form["line"].strip()[:80]})
 
     lines = ["# Graffiti Wall", "",
-             "Spray one line. Anonymous. Oldest lines fade away.", ""]
+             "Spray one line. Anonymous. Old lines fade away.", ""]
     tags = store.entries()
     if tags:
         for e in reversed(tags[-12:]):
             lines.append("* %s" % sanitize(e.get("line", "")))
     else:
-        lines.append("* (bare concrete — be the first)")
+        lines.append("* (bare concrete. be the first)")
     lines += [
         "",
         "[form post /wall]",
