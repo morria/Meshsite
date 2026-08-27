@@ -7,3 +7,4 @@ build/
 *.log.tmp
 example_site/calls.count
 example_site/last.caller
+radio-config-backup*
