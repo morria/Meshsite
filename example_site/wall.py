@@ -1,4 +1,4 @@
-"""Graffiti Wall — one line, no names, no rules (well, three rules)."""
+"""Graffiti Wall - one line, no names, no rules (well, three rules)."""
 
 from pathlib import Path
 
