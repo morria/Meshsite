@@ -54,14 +54,14 @@ Requests map to files:
 
 ### Static pages (`.md`)
 
-Meshdown, a line-oriented format: `# / ## / ###` headings, `* item` lists,
+A line-oriented markdown subset (the spec calls it "Meshdown"): `# / ## / ###` headings, `* item` lists,
 `=> /path Label` links, `---` rules, `[form]`/`[field]`/`[submit]` forms,
 plain lines as paragraphs. Keep pages small — the compressed hard cap is
 3 040 bytes (about 8–10 KB of text).
 
 ### Dynamic pages (`.py`)
 
-A Python file that defines `handle(req)` and returns a Meshdown `str`.
+A Python file that defines `handle(req)` and returns the page as a `str`.
 Handlers are reloaded automatically when the file changes.
 
 ```python
@@ -85,7 +85,7 @@ to answer with a protocol ERROR instead of a page.
 `meshsites.Store` is a persistence helper matching the spec's storage rules:
 it strips newlines/control characters from everything stored and bounds the
 file to 128 KB, dropping oldest entries. `sanitize()` does the same stripping
-for anything user-supplied you render into a page (it also prevents Meshdown
+for anything user-supplied you render into a page (it also prevents markdown
 line injection).
 
 ## Logging
